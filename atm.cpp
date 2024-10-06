@@ -4,6 +4,7 @@
 #include <vector>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -24,6 +25,14 @@ class Account {
 
         string getName(){
             return accountname;
+        }
+
+        void setBalance(double newBalance){
+            accountbal = newBalance;
+        }
+        //setter methods to pull from files
+        void setName(string newName){
+            accountname = newName;
         }
 
         friend ostream& operator<<(ostream& os, const Account& account) {
@@ -276,10 +285,46 @@ struct ATM {
             }
         }
     }
+
+    void saveAccountsToFile(){
+        ofstream toFile("history.txt"); //opens file "history.txt" or creates it | soon to be written to
+        for(auto &account : accountsOnFile){ //loops through every account on accountsOnFile, passing them by reference
+            toFile << account.getName() << " " << account.getBalance() << "\n"; //writes to file
+            for(auto &transaction : account.accountHistory){ //loops through all transactions on accountHistory, passing by reference
+                toFile << transaction << "\n";
+            }
+            toFile << "---" << "\n"; //used to split each Account object in the txt file
+        }
+        toFile.close();
+    }
+
+    void loadFromFile(){
+        ifstream fromFile("history.txt"); //opens file "history.txt" to be taken from
+        string line;
+        while(getline(fromFile, line)){ //goes down every line in the file, mapping each line to the string variable line
+            if(line == "---"){
+                continue; //go to the next line in the txt file
+            }
+            Account newAccount;
+            istringstream iss(line); //converts line to stream so it can be parsed easier
+            string name;
+            double balance;
+            iss >> name >> balance; //extracts account name and bal from line
+            newAccount.setName(name);
+            //sets account name and balance to the extracted one
+            newAccount.setBalance(balance);
+            while(getline(fromFile, line) && line != "---"){
+                newAccount.accountHistory.push_back(line); //for every line that isn't "---", write to the history vector of the Account object in question
+            }
+            accountsOnFile.push_back(newAccount); //pushes back the object to the Account vector in ATM struct
+        }
+        fromFile.close();
+    }
 };
 
 int main(){
     ATM myATM;
+    myATM.loadFromFile();
     bool globalSessionActive = true;
     string decision;
 
@@ -312,6 +357,7 @@ int main(){
                 break;
             }
             case EXIT: {
+                myATM.saveAccountsToFile();
                 globalSessionActive = false;
                 cout << "Goodbye!";
                 break;
@@ -345,4 +391,5 @@ int main(){
             }
         }
     }
+    return 0;
 }
