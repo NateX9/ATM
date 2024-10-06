@@ -174,7 +174,7 @@ struct ATM {
             }
 
             if(accountFound){
-                cout << "There is already an account with name " << accountName.getName() << endl;
+                cout << "There is already an account with that name" << endl;
             }else if(cin.fail()){
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -185,7 +185,7 @@ struct ATM {
                 accountName.accountpass = password;
 
                 accountsOnFile.push_back(accountName);
-                cout << "Your account has been created!";
+                cout << "Your account has been created!" << endl;
 
             }else{
                 cout << "Okay. Returning you to main screen...";
@@ -265,6 +265,7 @@ struct ATM {
                     }
                     case EXIT: {
                         cout << "Goodbye!" << endl;
+                        accountName.successfulLogin = false;
                         accountName.isSessionActive = false;
                         break;
                     }
