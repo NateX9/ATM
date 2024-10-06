@@ -157,19 +157,36 @@ struct ATM {
             char choice;
             cout << "What is your name? ";
             cin >> username;
+
             cout << "\n Create a password. ";
             cin >> password;
+
             cout << "\n Are you sure about the username and pass? Y for yes, n for no (case sensitive): ";
             cin >> choice;
-            if(cin.fail()){
+
+            bool accountFound = false;
+
+            for(int i = 0; i<accountsOnFile.size(); i++){
+                if(accountsOnFile[i].getName() == username){
+                    accountFound = true;
+                    break;
+                }
+            }
+
+            if(accountFound){
+                cout << "There is already an account with name " << accountName << endl;
+            }else if(cin.fail()){
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 cout << "Invalid input. Assuming no." << endl;
-            }else if(choice == 'Y'){
-                accountName.accountname = username ;
+            }else if(choice == 'Y' && !accountFound){ //&& !accountFound is technically uneccessary but I added it to make myself feel better.
+                accountName.accountname = username;
+
                 accountName.accountpass = password;
+
                 accountsOnFile.push_back(accountName);
                 cout << "Your account has been created!";
+
             }else{
                 cout << "Okay. Returning you to main screen...";
             }
@@ -185,6 +202,7 @@ struct ATM {
         void accountDeletion(string accountName){
             bool success = false;
             char choice;
+
             for(int i = 0; i<accountsOnFile.size(); i++){
                 if (accountsOnFile[i].accountname == accountName){
                     cout << "Do you want to delete the account named " << accountsOnFile[i].accountname << "? Y for yes, n for no (case sensitive) ";
@@ -313,6 +331,7 @@ int main(){
                         break;
                     }
                 }
+
                 if(!accountFound){
                     cout << "No account found with name " << accountName << endl;
                 }
