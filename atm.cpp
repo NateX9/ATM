@@ -6,17 +6,33 @@
 #include <sstream>
 
 using namespace std;
+
 class Account {
     private:
+
         double accountbal = 0.0;
         //account balance starts at 0
         string accountname, accountpass;
         //initialize name and pass to be assigned later
         vector<string> accountHistory;
     public:
-        ostringstream stream; //used to round floats that get pushed to the history vector
+
+        double getBalance() {
+            return accountbal;
+        }
+
+        string getName(){
+            return accountname;
+        }
+
+        friend ostream& operator<<(ostream& os, const Account& account) { //operator overloading for couting classes
+            os << "Account Name: " << account.accountname << "\n";
+            os << "Balance: $" << fixed << setprecision(2) << account.accountbal << "\n";
+            return os;
+        }
 
         void depositMoney(double additionalmoney){
+            ostringstream stream;
             accountbal = accountbal + additionalmoney;
             cout << fixed << setprecision(2) << "You now have $" << accountbal << " dollars in your account!" << endl;
             stream.str(""); //This and the following line clears stream so multiple numbers dont print next to eachother.
@@ -27,6 +43,7 @@ class Account {
         }
 
         void withdrawMoney(double subtractedMoney){
+            ostringstream stream;
             if(subtractedMoney > accountbal){
                 cout << "You can't withdraw that much, your account only holds $" << accountbal << " dollars." << endl;
             }else{
@@ -38,19 +55,9 @@ class Account {
                 accountHistory.push_back("Withdrew $" + stream.str());
             }
         }
-        
+
         void checkBalance(){
             cout << fixed << setprecision(2) << "You have $" << accountbal << " dollars in your account currently." << endl;
-        }
-
-        void accountCreation(){
-            cout << "Create a username. These are case sensitive. " << endl;
-            cin >> accountname;
-            cout << " " << endl;
-            cout << "Create a password. These are case sensitive. " << endl;
-            cin >> accountpass;
-            cout << " " << endl;
-            cout << "You're all set! You can now sign in." << endl;
         }
 
         void checkHistory(){
@@ -69,32 +76,29 @@ class Account {
             int allowedLoginAttempts = 3;
             //3 attempts allowed
             while(!successfulLogin && isSessionActive && allowedLoginAttempts > 0){
-                cout << "Enter Username below." << endl;
-                cin >> user;
                 cout << "Enter Password below." << endl;
                 cin >> pass;
-                if(user == accountname && pass == accountpass){
+                if(pass == accountpass){
                     successfulLogin = true; //breaks out of while loop
                     cout << " " << endl;
-                    cout << "You're in!" << endl;
+                    cout << "Successful Login." << endl;
                 }else{
                     allowedLoginAttempts--;
-                    cout << "Incorrect username or password. Try Again." << endl;
+                    cout << "Incorrect password. Try Again." << endl;
                     cout << " " << endl;
                 }
             }
             if(allowedLoginAttempts <= 0){
-                cout << "Too many incorrect login attempts. Shutting Down. ";
+                cout << "Too many incorrect login attempts. Going back to menu. ";
             }
         }
 
-        double &balancereference = accountbal; //So that accountbal (private) can be referenced and changed outside of class
+        friend struct ATM;
 };
 
+enum accountChoice { BALANCE, WITHDRAW, DEPOSIT, EXIT, HISTORY, INVALID };
 
-enum userChoice { BALANCE, WITHDRAW, DEPOSIT, EXIT, HISTORY, INVALID };
-
-userChoice getChoice(string input){
+accountChoice getChoice(string input){
     if(input == "bal") return BALANCE;
     if(input == "wit") return WITHDRAW;
     if(input == "dep") return DEPOSIT;
@@ -104,6 +108,18 @@ userChoice getChoice(string input){
 }
 //Kinda confusing, but since strings aren't native to c++, switch statements can't switch through them. I work around this by switching through an enum which assigns
 // a return value for each string input, and in the case of an unknown input, returns INVALID.
+
+enum ATMchoice { DELETE, CREATE, VIEW, LEAVE, LOGIN, UNKNOWN };
+
+ATMchoice getDecision(string input){
+    if(input == "view") return VIEW;
+    if(input == "create") return CREATE;
+    if(input == "delete") return DELETE;
+    if(input == "login") return LOGIN;
+    if(input == "leave") return LEAVE;
+    return UNKNOWN;
+}
+
 double getAmount(){
     double amount;
     while(true){
@@ -121,8 +137,8 @@ double getAmount(){
 void performWithdrawal(Account &currentATM){ //has to pass by reference because otherwise it will create another object
     cout << "How much would you like to withdraw? " << endl;
     double amount = getAmount();
-    if(amount > currentATM.balancereference){
-        cout << "You can only withdraw $" << currentATM.balancereference << "." << endl;
+    if(amount > currentATM.getBalance()){
+        cout << "You can only withdraw $" << currentATM.getBalance() << "." << endl;
     }else{
         currentATM.withdrawMoney(amount);
     }
@@ -133,53 +149,177 @@ void performDeposit(Account &currentATM){
     currentATM.depositMoney(getAmount());
 }
 
+struct ATM {
+        vector<Account> accountsOnFile;
+
+        void accountCreation(Account &accountName){
+            string username, password;
+            char choice;
+            cout << "What is your name? ";
+            cin >> username;
+            cout << "\n Create a password. ";
+            cin >> password;
+            cout << "\n Are you sure about the username and pass? Y for yes, n for no (case sensitive): ";
+            cin >> choice;
+            if(cin.fail()){
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "Invalid input. Assuming no." << endl;
+            }else if(choice == 'Y'){
+                accountName.accountname = username ;
+                accountName.accountpass = password;
+                accountsOnFile.push_back(accountName);
+                cout << "Your account has been created!";
+            }else{
+                cout << "Okay. Returning you to main screen...";
+            }
+        }
+
+        void showAccounts(){
+            cout << "Accounts on ATM: " << endl;
+            for(int i = 0; i<accountsOnFile.size(); i++){
+                cout << accountsOnFile[i] << endl << endl;
+            }
+        }
+
+        void accountDeletion(string accountName){
+            bool success = false;
+            char choice;
+            for(int i = 0; i<accountsOnFile.size(); i++){
+                if (accountsOnFile[i].accountname == accountName){
+                    cout << "Do you want to delete the account named " << accountsOnFile[i].accountname << "? Y for yes, n for no (case sensitive) ";
+                    cin >> choice;
+                    if(cin.fail()){
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Invalid input. Assuming no." << endl;
+                    }else if(choice == 'Y'){
+                        accountsOnFile.erase(accountsOnFile.begin() + i);
+                        success = true;
+                        break;
+                    }else{
+                        cout << "Okay. Returning you to main screen...";
+                    }
+                }
+            }
+            if(success){
+                cout << "Account has been deleted." << endl;
+            }
+            if(!success){
+                cout << "There is no account with that name or an error has occurred. Try again." << endl;
+            }
+        }
+
+        void userSession(Account &accountName){
+            while(accountName.successfulLogin && accountName.isSessionActive){
+                string choice;
+                cout << " " << endl;
+
+                cout << "What would you like to do in your account? " << endl;
+
+                cout << " " << endl;
+
+                cout << "Note: You can view your balance by typing 'bal', withdraw money using 'wit' and deposit money using 'dep'." << endl;
+                cout << "You can also check account history with 'hist' or leave the instance with 'exit'." << endl;
+
+                cout << " " << endl;
+
+                cin >> choice;
+
+                accountChoice action = getChoice(choice);
+
+                switch(action){ //big switch statement
+                    case BALANCE: {
+                        accountName.checkBalance();
+                        break;
+                    }
+                    case WITHDRAW: {
+                        performWithdrawal(accountName);
+                        break;
+                    }
+                    case DEPOSIT: {
+                        performDeposit(accountName);
+                        break;
+                    }
+                    case HISTORY: {
+                        accountName.checkHistory();
+                        break;
+                    }
+                    case EXIT: {
+                        cout << "Goodbye!" << endl;
+                        accountName.isSessionActive = false;
+                        break;
+                    }
+                    default: {
+                        cout << "Invalid input. Try again. ";
+                    }
+                }
+            }
+        }
+};
+
 int main(){
-    Account atm1;
+    ATM myATM;
+    bool globalSessionActive = true;
+    string decision;
 
-    atm1.accountCreation(); //runs through both methods
-    atm1.accountLogin();
+    while(globalSessionActive){
+        cout << "Welcome to the ATM! What would you like to do?" << endl;
+        cout << "You can log into an existing account by typing login." << endl;
+        cout << "You can look at all the accounts stored on this machine by typing 'view'." << endl;
+        cout << "You can also create your own account by typing 'create' or delete an account by typing 'delete'." << endl;
+        cout << "Finally, you can leave this session by typing 'leave'.";
+        cout << endl << "Keep in mind that these are case sensitive." << endl;
+        cin >> decision;
 
-    while(atm1.successfulLogin && atm1.isSessionActive){
-        string choice;
-        cout << " " << endl;
+        ATMchoice enumeratedDecision = getDecision(decision);
 
-        cout << "What would you like to do in your account? " << endl;
-
-        cout << " " << endl;
-
-        cout << "Note: You can view your balance by typing 'bal', withdraw money using 'wit' and deposit money using 'dep'." << endl;
-        cout << "You can also check account history with 'hist' or leave the instance with 'exit'." << endl;
-
-        cout << " " << endl;
-
-        cin >> choice;
-
-        userChoice action = getChoice(choice);
-
-        switch(action){ //big switch statement
-            case BALANCE: {
-                atm1.checkBalance();
+        switch(enumeratedDecision){
+            case VIEW: {
+                myATM.showAccounts();
                 break;
             }
-            case WITHDRAW: {
-                performWithdrawal(atm1);
+            case CREATE: {
+                Account newAccount;
+                myATM.accountCreation(newAccount);
                 break;
             }
-            case DEPOSIT: {
-                performDeposit(atm1);
+            case DELETE: {
+                string accountName;
+                cout << "Enter the name of the account you want to delete. ";
+                cin >> accountName;
+                myATM.accountDeletion(accountName);
                 break;
             }
-            case HISTORY: {
-                atm1.checkHistory();
+            case LEAVE: {
+                globalSessionActive = false;
+                cout << "Goodbye!";
                 break;
             }
-            case EXIT: {
-                cout << "Goodbye!" << endl;
-                atm1.isSessionActive = false;
+            case LOGIN: {
+                string accountName;
+                cout << "Enter the name of the account you want to login to. ";
+                cin >> accountName;
+                bool accountFound = false;
+
+                for(int i = 0; i<myATM.accountsOnFile.size(); i++){
+                    if(myATM.accountsOnFile[i].getName() == accountName){
+                        myATM.accountsOnFile[i].isSessionActive = true;
+                        myATM.accountsOnFile[i].accountLogin();
+                        if(myATM.accountsOnFile[i].successfulLogin){
+                            myATM.userSession(myATM.accountsOnFile[i]);
+                        }
+                        accountFound = true;
+                        break;
+                    }
+                }
+                if(!accountFound){
+                    cout << "No account found with name " << accountName << endl;
+                }
                 break;
             }
             default: {
-                cout << "Invalid input. Try again. ";
+                cout << "Invalid input. Please try again." << endl;
             }
         }
     }
