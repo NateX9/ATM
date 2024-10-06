@@ -174,7 +174,7 @@ struct ATM {
             }
 
             if(accountFound){
-                cout << "There is already an account with name " << accountName << endl;
+                cout << "There is already an account with name " << accountName.getName() << endl;
             }else if(cin.fail()){
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
