@@ -10,7 +10,6 @@ using namespace std;
 
 class Account {
     private:
-
         double accountbal = 0.0;
         //account balance starts at 0
         string accountname, accountpass;
@@ -35,7 +34,7 @@ class Account {
             accountname = newName;
         }
 
-        friend ostream& operator<<(ostream& os, const Account& account) {
+        friend ostream &operator<<(ostream &os, const Account &account) {
             os << "Account Name: " << account.accountname << "\n";
             os << "Balance: $" << fixed << setprecision(2) << account.accountbal << "\n";
             return os;
@@ -176,7 +175,7 @@ struct ATM {
 
         bool accountFound = false;
         //Look through every account in the vector, return true if account with same name (if two accounts have the same name, the whole program will get confused)
-        for(int i = 0; i<accountsOnFile.size(); i++){ //O^n
+        for(int i = 0; i<accountsOnFile.size(); i++){ //O(n)
             if(accountsOnFile[i].getName() == username){
                 accountFound = true;
                 break;
@@ -213,7 +212,7 @@ struct ATM {
         bool success = false; //going to check whether the account was found (true) or if theres no account with that name (false)
         char choice;
 
-        for(int i = 0; i<accountsOnFile.size(); i++){ //O^n
+        for(int i = 0; i<accountsOnFile.size(); i++){ //O(n)
             if (accountsOnFile[i].accountname == accountName){
                 cout << "Do you want to delete the account named " << accountsOnFile[i].accountname << "? Y for yes, n for no (case sensitive) ";
                 cin >> choice;
@@ -254,7 +253,7 @@ struct ATM {
 
             cin >> choice;
 
-            userChoice action = getChoice(choice);
+            userChoice action = getChoice(choice); //assigns a variable to global enum created before
 
             switch(action){ //Switches between the enum created earlier and assigned to variable "action"
                 case BALANCE: {
@@ -324,6 +323,7 @@ struct ATM {
 
 int main(){
     ATM myATM;
+    //loads history.txt
     myATM.loadFromFile();
     bool globalSessionActive = true;
     string decision;
@@ -357,6 +357,7 @@ int main(){
                 break;
             }
             case EXIT: {
+                //save before exit
                 myATM.saveAccountsToFile();
                 globalSessionActive = false;
                 cout << "Goodbye!";
