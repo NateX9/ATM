@@ -26,12 +26,20 @@ class Account {
             return accountname;
         }
 
+        string getPass(){
+            return accountpass;
+        }
+
         void setBalance(double newBalance){
             accountbal = newBalance;
         }
         //setter methods to pull from files
         void setName(string newName){
             accountname = newName;
+        }
+
+        void setPass(string newPass){
+            accountpass = newPass;
         }
 
         friend ostream &operator<<(ostream &os, const Account &account) {
@@ -164,11 +172,12 @@ struct ATM {
     void accountCreation(Account &accountName){
         string username, password;
         char choice; //whether they want that specific username and password (maybe they mistyped?)
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         cout << "What is your name? ";
-        cin >> username;
+        getline(cin, username);
 
         cout << "\n Create a password. ";
-        cin >> password;
+        getline(cin, password);
 
         cout << "\n Are you sure about the username and pass? Y for yes, n for no (case sensitive): ";
         cin >> choice;
@@ -288,7 +297,7 @@ struct ATM {
     void saveAccountsToFile(){
         ofstream toFile("history.txt"); //opens file "history.txt" or creates it | soon to be written to
         for(auto &account : accountsOnFile){ //loops through every account on accountsOnFile, passing them by reference
-            toFile << account.getName() << " " << account.getBalance() << "\n"; //writes to file
+            toFile << account.getName() << ";" << account.getBalance() << ";" << account.getPass() << "\n"; //writes to file
             for(auto &transaction : account.accountHistory){ //loops through all transactions on accountHistory, passing by reference
                 toFile << transaction << "\n";
             }
@@ -305,13 +314,17 @@ struct ATM {
                 continue; //go to the next line in the txt file
             }
             Account newAccount;
-            istringstream iss(line); //converts line to stream so it can be parsed easier
-            string name;
+            istringstream fin(line); //converts line to stream so it can be parsed easier
+            string name, pass;
             double balance;
-            iss >> name >> balance; //extracts account name and bal from line
+            getline(fin, name, ';');
+            fin >> balance; //extracts account name bal and pass from line
+            fin.ignore(1);
+            getline(fin, pass, '\n');
             newAccount.setName(name);
-            //sets account name and balance to the extracted one
+            //sets account name balance and pass to the extracted ones
             newAccount.setBalance(balance);
+            newAccount.setPass(pass);
             while(getline(fromFile, line) && line != "---"){
                 newAccount.accountHistory.push_back(line); //for every line that isn't "---", write to the history vector of the Account object in question
             }
@@ -351,8 +364,9 @@ int main(){
             }
             case DELETE: {
                 string accountName;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 cout << "Enter the name of the account you want to delete. ";
-                cin >> accountName;
+                getline(cin, accountName);
                 myATM.accountDeletion(accountName);
                 break;
             }
@@ -365,8 +379,9 @@ int main(){
             }
             case LOGIN: {
                 string accountName;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 cout << "Enter the name of the account you want to login to. ";
-                cin >> accountName;
+                getline(cin, accountName);
                 bool accountFound = false;
 
                 for(int i = 0; i<myATM.accountsOnFile.size(); i++){
